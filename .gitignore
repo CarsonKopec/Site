@@ -1,0 +1,17 @@
+/node_modules
+/.next
+/.git
+/.claude
+/.agents
+/out
+/build
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+.env*.local
+.vercel
+
+# Local content database
+/data/*.db
+/data/*.db-shm
+/data/*.db-wal

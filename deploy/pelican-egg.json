@@ -1,0 +1,74 @@
+{
+    "_comment": "carson.systems — Next.js + SQLite content site. Import into Pelican (Admin > Eggs > Import). Pelican also accepts this Pterodactyl PTDL_v2 format.",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2026-07-04T01:23:39.468Z",
+    "name": "carson.systems (Next.js content site)",
+    "author": "imaigneyt@gmail.com",
+    "description": "A Next.js (App Router) site with a SQLite-backed content API. Blogs, notes, and projects are managed over HTTP + the carsonctl CLI. Runs with `next start`; the DB persists in /home/container/data.",
+    "features": null,
+    "docker_images": {
+        "Node 22": "ghcr.io/pelican-eggs/yolks:nodejs_22",
+        "Node 20": "ghcr.io/pelican-eggs/yolks:nodejs_20",
+        "Node 24": "ghcr.io/pelican-eggs/yolks:nodejs_24"
+    },
+    "file_denylist": [],
+    "startup": "npm run start -- -H 0.0.0.0 -p {{SERVER_PORT}}",
+    "config": {
+        "files": "{}",
+        "startup": "{\"done\":\"Ready in\"}",
+        "logs": "{}",
+        "stop": "^C"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!/bin/bash\n# ---- carson.systems (Next.js content site) — Pelican installer ----\ncd /mnt/server\n\n# 1. Get the code: git clone/pull if GIT_ADDRESS is set, else expect an SFTP upload.\nif [ -n \"${GIT_ADDRESS}\" ]; then\n    [ \"${GIT_ADDRESS: -4}\" == \".git\" ] || GIT_ADDRESS=\"${GIT_ADDRESS}.git\"\n    [ -z \"${GIT_BRANCH}\" ] && GIT_BRANCH=\"main\"\n    if [ -d .git ]; then\n        echo \"Updating existing checkout on ${GIT_BRANCH}...\"\n        git remote set-url origin \"${GIT_ADDRESS}\"\n        git fetch --all --prune\n        git reset --hard \"origin/${GIT_BRANCH}\"\n    else\n        echo \"Cloning ${GIT_ADDRESS} (${GIT_BRANCH})...\"\n        git clone --depth 1 --branch \"${GIT_BRANCH}\" \"${GIT_ADDRESS}\" /tmp/app\n        cp -a /tmp/app/. /mnt/server/\n        rm -rf /tmp/app\n    fi\nelse\n    echo \"GIT_ADDRESS not set — using files already in /home/container (SFTP upload).\"\nfi\n\nif [ ! -f package.json ]; then\n    echo \"ERROR: no package.json in the server root. Set GIT_ADDRESS or upload the project via SFTP.\"\n    exit 1\nfi\n\n# 2. Install dependencies (dev deps included — needed for the build + seed).\nnpm ci || npm install\n\n# 3. Build the production bundle.\nnpm run build\n\n# 4. Seed the content DB (idempotent — skips if already populated).\nnpm run seed || echo \"seed skipped/failed (non-fatal)\"\n\necho \"-----------------------------------------\"\necho \"Install complete. Set CONTENT_API_TOKEN and start the server.\"\necho \"-----------------------------------------\"\n",
+            "container": "ghcr.io/pelican-eggs/yolks:nodejs_22",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Content API token",
+            "description": "Bearer token that protects the write API (POST/PUT/DELETE on /api/*) and is used by carsonctl. Generate a long random value. Writes are disabled if this is empty.",
+            "env_variable": "CONTENT_API_TOKEN",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:512",
+            "field_type": "text"
+        },
+        {
+            "name": "Git repository",
+            "description": "HTTPS URL of the repo to deploy, e.g. https://github.com/CarsonKopec/PersonalWebsite. Leave blank to deploy files you upload via SFTP instead.",
+            "env_variable": "GIT_ADDRESS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Git branch",
+            "description": "Branch to check out.",
+            "env_variable": "GIT_BRANCH",
+            "default_value": "main",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "SQLite DB path",
+            "description": "Where the content database lives. Keep it under /home/container so it persists across restarts and reinstalls.",
+            "env_variable": "CONTENT_DB_PATH",
+            "default_value": "/home/container/data/content.db",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string",
+            "field_type": "text"
+        }
+    ]
+}
