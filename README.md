@@ -87,9 +87,6 @@ The project list was built from the actual repositories under
 
 - **MediaServer**, **Span**, **Minecraft Bedrock Bot** — real repos, but no
   README, so their copy was inferred from folder layout. Confirm the details.
-- **JNova**, **IronGuard** — named in the brief but not found on disk. These
-  are deliberate placeholders; add real details or link the repos. Per the
-  brief, no details were invented for IronGuard.
 
 Placeholders in `src/data/links.ts` (email, resume) are also yours to fill in.
 
